@@ -131,20 +131,10 @@ export default function WordGame({ onEnd }) {
   if (!started) {
     return (
       <div className="game-start-screen">
-        <div className="game-start-hint">Descifra palabras mezcladas antes de que el tiempo se agote.</div>
-        <div className="game-instructions">
-          <div className="game-instr-title">📋 CÓMO JUGAR</div>
-          <div className="game-instr-row"><span className="game-instr-icon">🔀</span>Verás una palabra con sus letras en desorden. Escribe la palabra correcta.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">⏱</span>Tienes {TOTAL_TIME} segundos. Cada respuesta correcta da puntos.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">❌</span>Un error quita {PENALTY} segundos del cronómetro.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">🔤</span>Palabras en español. Los acentos son opcionales — el juego los acepta igual.</div>
-          <div className="game-instr-title" style={{marginTop:".3rem"}}>⌨ CONTROLES</div>
-          <div className="game-instr-row"><span className="game-instr-icon">⌨</span>Escribe la respuesta y presiona Enter para confirmar.</div>
-        </div>
-        <div className="game-reward-preview">
-          <span className="game-reward-chip xp">+50 XP base</span>
-          <span className="game-reward-chip coins">🪙 30 monedas</span>
-          <span className="game-reward-chip stat">🟪 INTELIGENCIA</span>
+        <div className="game-start-hint">
+          Ordena la palabra desordenada.<br />
+          Escribe y acierta automáticamente.<br />
+          ENTER para omitir (−{PENALTY}s de penalización).
         </div>
         <button className="btn-gold" onClick={start}>▶ INICIAR</button>
       </div>

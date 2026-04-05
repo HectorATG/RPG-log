@@ -23,14 +23,8 @@
 import { useEffect, useRef } from "react";
 
 export default function ResultScreen({ game, score, onReplay, onBack, onGameDone }) {
-  // XP nerfada: multiplicador reducido (÷800 en vez de ÷200), cap de 2× el base
-  // Esto evita que los juegos superen la XP de las misiones reales
-  const xpRaw      = Math.round(game.xp    * (1 + score / 800));
-  const xpFinal    = Math.min(xpRaw, Math.round(game.xp * 2));   // máx ×2
-  const coinsFinal = Math.min(
-    Math.round(game.coins * (1 + score / 1000)),
-    Math.round(game.coins * 1.5)                                   // máx ×1.5
-  );
+  const xpFinal    = Math.round(game.xp    * (1 + score / 200));
+  const coinsFinal = Math.round(game.coins * (1 + score / 300));
 
   // Llamar onGameDone UNA sola vez al montar (evita doble aplicación si re-render)
   const called = useRef(false);

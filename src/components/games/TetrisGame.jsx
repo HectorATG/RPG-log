@@ -222,23 +222,9 @@ export default function TetrisGame({ onEnd }) {
   if (!started) {
     return (
       <div className="game-start-screen">
-        <div className="game-start-hint">Encaja las piezas y borra líneas completas. ¡La velocidad aumenta progresivamente!</div>
-        <div className="game-instructions">
-          <div className="game-instr-title">📋 CÓMO JUGAR</div>
-          <div className="game-instr-row"><span className="game-instr-icon">🧱</span>Las piezas caen desde arriba. Llena líneas horizontales completas para borrarlas.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">✨</span>Cada línea completa suma puntos. El juego termina cuando los bloques llegan arriba.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">⚡</span>La velocidad aumenta cada 5 000 puntos.</div>
-          <div className="game-instr-title" style={{marginTop:".3rem"}}>⌨ TECLADO</div>
-          <div className="game-instr-row"><span className="game-instr-icon">◀▶</span>Flechas izquierda/derecha para mover.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">🔼</span>Flecha arriba → rotar · Abajo → bajar · Espacio → caída instantánea.</div>
-          <div className="game-instr-title" style={{marginTop:".3rem"}}>👆 MÓVIL (swipe)</div>
-          <div className="game-instr-row"><span className="game-instr-icon">↔</span>Desliza izq/der para mover. Arriba para rotar. Abajo para caída rápida. Toca para rotar.</div>
-        </div>
-        <div className="game-reward-preview">
-          <span className="game-reward-chip xp">+60 XP base</span>
-          <span className="game-reward-chip coins">🪙 38 monedas</span>
-          <span className="game-reward-chip stat">🟪 INT</span>
-          <span className="game-reward-chip stat">🟩 AGI</span>
+        <div className="game-start-hint">
+          ← → mover | ↑ rotar | ↓ bajar<br />
+          ESPACIO caída rápida
         </div>
         <button className="btn-gold" onClick={start}>▶ INICIAR</button>
       </div>

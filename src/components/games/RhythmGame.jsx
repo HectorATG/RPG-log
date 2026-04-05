@@ -164,22 +164,12 @@ export default function RhythmGame({ onEnd }) {
   if (!started) {
     return (
       <div className="game-start-screen">
-        <div className="game-start-hint">Golpea las notas exactamente cuando lleguen a la zona marcada. ¡El timing lo es todo!</div>
-        <div className="game-instructions">
-          <div className="game-instr-title">📋 CÓMO JUGAR</div>
-          <div className="game-instr-row"><span className="game-instr-icon">🎵</span>Las notas viajan de derecha a izquierda en dos carriles.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">🎯</span>Presiona el botón cuando la nota llegue al círculo del lado izquierdo.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">⭐</span><strong>PERFECT</strong> (+300 pts) con timing exacto. <strong>GOOD</strong> (+150 pts) si está cerca.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">🔥</span>El combo multiplica tus puntos. Cada 5 hits seguidos da +50 pts extra.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">⏱</span>La partida dura {DURATION} segundos.</div>
-          <div className="game-instr-title" style={{marginTop:".3rem"}}>⌨ TECLADO &nbsp;|&nbsp; 👆 MÓVIL</div>
-          <div className="game-instr-row"><span className="game-instr-icon">D</span>Tecla D o botón ARRIBA → carril superior (morado).</div>
-          <div className="game-instr-row"><span className="game-instr-icon">K</span>Tecla K o botón ABAJO → carril inferior (naranja).</div>
-        </div>
-        <div className="game-reward-preview">
-          <span className="game-reward-chip xp">+70 XP base</span>
-          <span className="game-reward-chip coins">🪙 45 monedas</span>
-          <span className="game-reward-chip stat">🟩 AGILIDAD</span>
+        <div className="game-start-hint">
+          Las notas vienen de la derecha.<br />
+          Golpéalas cuando lleguen al círculo.<br /><br />
+          <span style={{ letterSpacing: "0.1em" }}>
+            Carril superior → <strong>D</strong> &nbsp;|&nbsp; Carril inferior → <strong>K</strong>
+          </span>
         </div>
         <button className="btn-gold" onClick={start}>▶ INICIAR</button>
       </div>

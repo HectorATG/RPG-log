@@ -11,11 +11,3 @@ import App from "./App";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<App />);
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register(`${process.env.PUBLIC_URL || ""}/service-worker.js`)
-      .catch((error) => console.error("Error registrando el service worker:", error));
-  });
-}

@@ -21,8 +21,6 @@ import WalletSection        from "../components/settings/WalletSection";
 import NotificationsSection from "../components/settings/NotificationsSection";
 import LogoutSection        from "../components/settings/LogoutSection";
 import GpsSection           from "../components/settings/GpsSection";
-import AboutSection         from "../components/settings/AboutSection";
-import TosSection          from "../components/settings/TosSection";
 
 const SECTION_TITLES = {
   "settings-profile": "👤 PERFIL",
@@ -30,11 +28,9 @@ const SECTION_TITLES = {
   "settings-notifs":  "🔔 NOTIFICACIONES",
   "settings-logout":  "🚪 SESIÓN",
   "settings-gps":     "📡 GPS",
-  "settings-about":   "❓ QUÉ ES RPG LOG",
-  "settings-tos":     "📜 TÉRMINOS Y CONDICIONES",
 };
 
-export default function SettingsScreen({ section, user, setUser, notifs, setNotifs, onLogout, gpsEnabled, gpsStatus, lastCoords, onToggleGps, isSuperUser, onToggleSuperUser }) {
+export default function SettingsScreen({ section, user, setUser, notifs, setNotifs, onLogout, gpsEnabled, gpsStatus, lastCoords, onToggleGps }) {
   return (
     <div className="settings-page">
 
@@ -46,12 +42,7 @@ export default function SettingsScreen({ section, user, setUser, notifs, setNoti
       </div>
 
       {section === "settings-profile" && (
-        <ProfileSection
-          user={user}
-          setUser={setUser}
-          isSuperUser={isSuperUser}
-          onToggleSuperUser={onToggleSuperUser}
-        />
+        <ProfileSection user={user} setUser={setUser} />
       )}
       {section === "settings-wallet" && (
         <WalletSection user={user} />
@@ -62,9 +53,6 @@ export default function SettingsScreen({ section, user, setUser, notifs, setNoti
       {section === "settings-logout" && (
         <LogoutSection onLogout={onLogout} />
       )}
-      {section === "settings-about" && <AboutSection />}
-      {section === "settings-tos"   && <TosSection />}
-
       {section === "settings-gps" && (
         <GpsSection
           gpsEnabled={gpsEnabled}

@@ -88,20 +88,9 @@ export default function SimonGame({ onEnd }) {
   if (!started) {
     return (
       <div className="game-start-screen">
-        <div className="game-start-hint">Memoriza la secuencia de colores y repítela en el mismo orden.</div>
-        <div className="game-instructions">
-          <div className="game-instr-title">📋 CÓMO JUGAR</div>
-          <div className="game-instr-row"><span className="game-instr-icon">👁</span>El juego iluminará los botones en un orden — observa bien.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">🖱</span>Cuando sea tu turno, repite la secuencia presionando los botones en el mismo orden.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">➕</span>Cada ronda exitosa añade un color más. La velocidad aumenta a partir de la ronda 6.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">❌</span>Un solo error termina el juego. ¡Concéntrate!</div>
-          <div className="game-instr-title" style={{marginTop:".3rem"}}>⌨ CONTROLES</div>
-          <div className="game-instr-row"><span className="game-instr-icon">👆</span>Toca o haz clic en los botones de colores durante tu turno.</div>
-        </div>
-        <div className="game-reward-preview">
-          <span className="game-reward-chip xp">+55 XP base</span>
-          <span className="game-reward-chip coins">🪙 35 monedas</span>
-          <span className="game-reward-chip stat">🟪 INTELIGENCIA</span>
+        <div className="game-start-hint">
+          Observa la secuencia de colores y repítela.<br />
+          Un error termina el juego. ¡Buena suerte!
         </div>
         <button className="btn-gold" onClick={start}>▶ INICIAR</button>
       </div>

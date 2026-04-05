@@ -92,20 +92,9 @@ export default function OsuGame({ onEnd }) {
   if (!started) {
     return (
       <div className="game-start-screen">
-        <div className="game-start-hint">Toca los círculos antes de que desaparezcan. ¡Velocidad y reflejos al máximo!</div>
-        <div className="game-instructions">
-          <div className="game-instr-title">📋 CÓMO JUGAR</div>
-          <div className="game-instr-row"><span className="game-instr-icon">⭕</span>Círculos aparecen en posiciones aleatorias de la pantalla.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">👆</span>Toca o haz clic en cada círculo antes de que su borde desaparezca.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">⏱</span>La partida dura {DURATION_OSU} segundos. Cada círculo da +10 puntos.</div>
-          <div className="game-instr-row"><span className="game-instr-icon">🔥</span>Los círculos aparecen cada vez más rápido conforme avanza el tiempo.</div>
-          <div className="game-instr-title" style={{marginTop:".3rem"}}>⌨ CONTROLES</div>
-          <div className="game-instr-row"><span className="game-instr-icon">👆</span>Toca o haz clic sobre el círculo para anotarlo.</div>
-        </div>
-        <div className="game-reward-preview">
-          <span className="game-reward-chip xp">+45 XP base</span>
-          <span className="game-reward-chip coins">🪙 28 monedas</span>
-          <span className="game-reward-chip stat">🟩 AGILIDAD</span>
+        <div className="game-start-hint">
+          Pulsa los círculos antes de que desaparezcan.<br />
+          Tienes {DURATION_OSU} segundos.
         </div>
         <button className="btn-gold" onClick={start}>▶ INICIAR</button>
       </div>

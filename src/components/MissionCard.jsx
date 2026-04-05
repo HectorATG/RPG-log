@@ -1,56 +1,35 @@
 /**
  * MissionCard.jsx — Tarjeta individual de misión
  * ─────────────────────────────────────────────────────
- * Toda la información y controles están DENTRO del mismo contenedor.
+ * Renderiza una misión con su información y controles.
  *
- * ── ESTRUCTURA VISUAL ────────────────────────────────────────────
- *   mission-top  → stat tag + nombre + descripción + recompensas (XP, monedas, GPS bonus)
- *   mission-bottom → barra de progreso (solo semanales) + fila de acciones
- *
- * ── BOTÓN ABANDONAR ──────────────────────────────────────────────
- *   Solo aparece en misiones diarias no completadas cuando se pasa
- *   la prop onAbandon. Está al lado del botón "COMPLETAR" en la misma fila.
- *   Al presionarlo muestra un menú desplegable con:
- *     • 🗑 Eliminar — oculta la misión hasta mañana (ignoredIds en MissionsScreen)
- *     • 🔄 Cambiar  — reemplaza por otra misión del pool no usada hoy
- *   El menú usa fuentes y padding grandes para ser cómodo en móvil (min-height: 60px).
- *
- * ── EVIDENCIAS ───────────────────────────────────────────────────
- *   Si la misión tiene locationEvidenceEnabled y el bonus no se ha aplicado,
- *   se muestra un badge "📍 +X XP" en la sección de recompensas.
- *   El CompleteModal (abierto al presionar COMPLETAR) gestiona la captura
- *   de foto y/o GPS para aplicar los bonos correspondientes.
+ * Comportamiento por tipo:
+ *   type="daily"  — SIN barra de progreso. Solo botón COMPLETAR.
+ *                   Las misiones diarias son binarias: hecho o no hecho.
+ *   type="weekly" — CON barra de progreso. El progreso avanza
+ *                   automáticamente al completar misiones diarias del
+ *                   mismo stat. El botón aparece solo si progress >= total.
  *
  * Props:
- *   mission    — objeto de misión con todos sus campos
+ *   mission    — { id, name, desc, stat, icon, color, xp, coins,
+ *                  progress, total, unit, done }
  *   type       — "daily" | "weekly"
  *   onComplete — callback(mission) al presionar COMPLETAR
- *   onAbandon  — callback(mission, "delete"|"swap") — opcional, solo diarias
+ *
+ * Estilos: MissionsScreen.css (.mission-card, .mission-top, etc.)
  */
-import { useState } from "react";
-
-export default function MissionCard({ mission, type = "daily", onComplete, onAbandon }) {
-  const [showAbandOpts, setShowAbandOpts] = useState(false);
-
-  const pct         = Math.min((mission.progress / mission.total) * 100, 100);
-  const isWeekly    = type === "weekly";
-  const canComplete = isWeekly
-    ? (mission.progress >= mission.total && !mission.done)
-    : !mission.done;
-  const showAbandon = onAbandon && !isWeekly && !mission.done;
-
-  const handleAbandon = (action) => {
-    setShowAbandOpts(false);
-    onAbandon(mission, action);
-  };
+export default function MissionCard({ mission, type = "daily", onComplete }) {
+  const pct        = Math.min((mission.progress / mission.total) * 100, 100);
+  const isWeekly   = type === "weekly";
+  // Las semanales se pueden completar cuando el progreso llega al total
+  const canComplete = isWeekly ? (mission.progress >= mission.total && !mission.done) : !mission.done;
 
   return (
     <div
       className={`mission-card${mission.done ? " done" : ""}`}
       style={{ "--stat-color": mission.color }}
-      onClick={() => showAbandOpts && setShowAbandOpts(false)}
     >
-      {/* ── Info: stat + nombre + descripción + recompensas ── */}
+      {/* ── Fila superior: info + recompensas ── */}
       <div className="mission-top">
         <div className="mission-left">
           <div className="mission-stat-tag">
@@ -59,11 +38,9 @@ export default function MissionCard({ mission, type = "daily", onComplete, onAba
           <div className="mission-name-text">{mission.name}</div>
           <div className="mission-desc">{mission.desc}</div>
         </div>
-
         <div className="mission-rewards">
           <div className="reward-xp">+{mission.xp} XP</div>
           <div className="reward-coins">🪙 {mission.coins}</div>
-          {/* Badge GPS bonus — visible si la misión lo admite y aún no se aplicó */}
           {mission.locationEvidenceEnabled && !mission.locationBonusApplied && (
             <div className="reward-gps" title="Bonus GPS disponible">
               📍 +{mission.locationBonusXp || 0} XP
@@ -72,11 +49,11 @@ export default function MissionCard({ mission, type = "daily", onComplete, onAba
         </div>
       </div>
 
-      {/* ── Controles: barra progreso + acciones ── */}
+      {/* ── Parte inferior: barra (solo semanales) + botón ── */}
       {!mission.done && (
         <div className="mission-bottom">
 
-          {/* Barra de progreso solo en semanales */}
+          {/* Barra de progreso — SOLO en semanales */}
           {isWeekly && (
             <div className="mission-progress-wrap">
               <div className="mission-progress-label">
@@ -88,45 +65,21 @@ export default function MissionCard({ mission, type = "daily", onComplete, onAba
             </div>
           )}
 
-          {/* Fila de acciones: COMPLETAR + ABANDONAR lado a lado */}
-          <div className="mission-actions">
-            {canComplete && (
-              <button
-                className="mission-btn"
-                onClick={e => { e.stopPropagation(); onComplete(mission); }}
-              >
-                ▶ COMPLETAR
-              </button>
-            )}
+          {/* Botón completar:
+              · Diarias: siempre visible
+              · Semanales: solo cuando el progreso llegó al total */}
+          {canComplete && (
+            <button className="mission-btn" onClick={() => onComplete(mission)}>
+              ▶ COMPLETAR
+            </button>
+          )}
 
-            {isWeekly && !canComplete && (
-              <div className="mission-in-progress">
-                EN PROGRESO — {mission.total - mission.progress} {mission.unit} restantes
-              </div>
-            )}
-
-            {/* Botón ABANDONAR con menú desplegable grande y accesible */}
-            {showAbandon && (
-              <div className="mission-abandon-inline" onClick={e => e.stopPropagation()}>
-                <button
-                  className="mission-btn-abandon"
-                  onClick={() => setShowAbandOpts(v => !v)}
-                >
-                  ABANDONAR
-                </button>
-                {showAbandOpts && (
-                  <div className="mission-abandon-opts">
-                    <button className="abandon-opt-inline" onClick={() => handleAbandon("delete")}>
-                      🗑 Eliminar misión
-                    </button>
-                    <button className="abandon-opt-inline" onClick={() => handleAbandon("swap")}>
-                      🔄 Cambiar por otra
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Semanales incompletas: muestra "en progreso" */}
+          {isWeekly && !canComplete && (
+            <div className="mission-in-progress">
+              EN PROGRESO — {mission.total - mission.progress} {mission.unit} restantes
+            </div>
+          )}
         </div>
       )}
     </div>

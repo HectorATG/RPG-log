@@ -52,9 +52,7 @@ const lsCustoms   = (u) => `rpglog_customs_${u}`;
 const lsSlots     = (u) => `rpglog_slots_${u}`;   // Set serializado de slots desbloqueados
 const lsNotifs  = (u) => `rpglog_notifs_${u}`;
 const lsRecords = (u) => `rpglog_records_${u}`;
-const lsGps     = (u) => `rpglog_gps_${u}`;
-const lsPlays   = (u) => `rpglog_plays_${u}`;   // { [gameId]: { count, resetAt } }
-const lsSuper   = (u) => `rpglog_super_${u}`;   // boolean superuser      // boolean: GPS habilitado por el usuario
+const lsGps     = (u) => `rpglog_gps_${u}`;      // boolean: GPS habilitado por el usuario
 
 // ── Helpers localStorage ─────────────────────────────────────────
 function lsGet(key, fallback) {
@@ -128,15 +126,6 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
   const [gpsStatus,   setGpsStatus]   = useState("disabled"); // disabled|requesting|active|denied|unsupported
   const [lastCoords,  setLastCoords]  = useState(null);  // { latitude, longitude, accuracy, capturedAt }
   const gpsWatchRef = useRef(null); // watchPosition ID
-  const [isSuperUser, setIsSuperUser] = useState(() => lsGet(lsSuper(userId), false));
-  const [gamePlays,   setGamePlaysRaw] = useState(() => lsGet(lsPlays(userId), {}));
-  const setGamePlays = (val) => {
-    setGamePlaysRaw(prev => {
-      const next = typeof val === "function" ? val(prev) : val;
-      lsSet(lsPlays(userId), next);
-      return next;
-    });
-  };
 
   // ── Títulos ──────────────────────────────────────────────────
   const [titlesState, setTitlesState] = useState(() => loadTitlesState(userId));
@@ -422,18 +411,12 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
           userId={userId}
           gpsEnabled={gpsEnabled}
           lastCoords={lastCoords}
-          customMissions={customMissions}
         />
       )}
 
       {/* ── MINIJUEGOS ────────────────────────────────── */}
       {activePage === "minigames" && (
-        <MiniGamesScreen
-          onGameDone={handleGameDone}
-          gamePlays={gamePlays}
-          setGamePlays={setGamePlays}
-          isSuperUser={isSuperUser}
-        />
+        <MiniGamesScreen onGameDone={handleGameDone} />
       )}
 
       {/* ── TIENDA ────────────────────────────────────── */}
@@ -468,12 +451,6 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
           gpsStatus={gpsStatus}
           lastCoords={lastCoords}
           onToggleGps={handleToggleGps}
-          isSuperUser={isSuperUser}
-          onToggleSuperUser={() => {
-            const next = !isSuperUser;
-            setIsSuperUser(next);
-            lsSet(lsSuper(userId), next);
-          }}
         />
       )}
     </div>

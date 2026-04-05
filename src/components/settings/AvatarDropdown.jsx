@@ -10,8 +10,7 @@
  *   🪙 MONEDERO         → navega a "settings-wallet"
  *   🔔 NOTIFICACIONES   → navega a "settings-notifs"
  *              (muestra un punto rojo pulsante si hay no leídas)
- *   � DESCARGAR APP    → dispara la instalación PWA o muestra instrucciones
- *   �🚪 CERRAR SESIÓN    → navega a "settings-logout" (estilo peligro rojo)
+ *   🚪 CERRAR SESIÓN    → navega a "settings-logout" (estilo peligro rojo)
  *
  * Se cierra automáticamente al seleccionar cualquier opción
  * y también al hacer clic fuera (manejado en HomeScreen.handleAppClick).
@@ -24,15 +23,8 @@
  *
  * Estilos: SettingsScreen.css (.dropdown-panel, .dp-item, .dp-header)
  */
-import { promptPwaInstall } from "../PwaInstallPrompt";
-
 export default function AvatarDropdown({ setActivePage, setShowDropdown, unreadCount, user }) {
   const go = (page) => { setActivePage(page); setShowDropdown(false); };
-
-  const handleInstallClick = async () => {
-    setShowDropdown(false);
-    await promptPwaInstall();
-  };
 
   return (
     <div className="dropdown-panel">
@@ -76,24 +68,6 @@ export default function AvatarDropdown({ setActivePage, setShowDropdown, unreadC
       <button className="dp-item" onClick={() => go("settings-gps")}>
         <span className="dp-item-icon">📡</span>
         <span className="dp-item-label">GPS</span>
-        <span className="dp-item-arrow">›</span>
-      </button>
-
-      <button className="dp-item" onClick={() => go("settings-about")}>
-        <span className="dp-item-icon">❓</span>
-        <span className="dp-item-label">¿QUÉ ES RPG LOG?</span>
-        <span className="dp-item-arrow">›</span>
-      </button>
-
-      <button className="dp-item" onClick={() => go("settings-tos")}>
-        <span className="dp-item-icon">📜</span>
-        <span className="dp-item-label">TÉRMINOS Y CONDICIONES</span>
-        <span className="dp-item-arrow">›</span>
-      </button>
-
-      <button className="dp-item" onClick={handleInstallClick}>
-        <span className="dp-item-icon">📲</span>
-        <span className="dp-item-label">DESCARGAR APP</span>
         <span className="dp-item-arrow">›</span>
       </button>
 
