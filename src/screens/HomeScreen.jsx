@@ -1,30 +1,14 @@
 /**
  * HomeScreen.jsx — Pantalla principal (dashboard)
  * ─────────────────────────────────────────────────────
- * Contenedor central post-login. Gestiona TODO el estado global.
+ * Cuando authData está disponible (login/registro real), inicializa
+ * el perfil, stats y monedas con los datos del backend via
+ * mapProfile() y mapStats() de services/api.js.
  *
- * ── AISLAMIENTO POR USUARIO (fix bug de misiones compartidas) ───
- * Todas las claves de localStorage llevan el userId como sufijo:
- *   rpglog_titles_{userId}
- *   rpglog_customs_{userId}
- *   rpglog_extra_{userId}
- *   rpglog_notifs_{userId}
- *   rpglog_records_{userId}
- * Así cada cuenta tiene su propio estado independiente.
- * MissionsScreen recibe `userId` y usa rpglog_missions_{userId}.
+ * Si authData es null (modo invitado), usa los datos locales de siempre.
  *
- * ── SISTEMA DE NOTIFICACIONES ───────────────────────────────────
- * addNotification(notif) inserta una notificación al array y la
- * persiste en localStorage. Se llama automáticamente al ocurrir:
- *   • Misión completada      → icono + XP + monedas ganadas
- *   • Subida de nivel        → nivel nuevo
- *   • Misión especial unlock → al alcanzar nivel 5
- *   • Timer custom expirado  → cuando durationMs se cumple
- *   • Récord en minijuego    → al superar el mejor score guardado
- *
- * ── BONUS DE TÍTULO ─────────────────────────────────────────────
- * titleBonus { xpGlobal, coinBonus, xpStat, xpStatMult } se aplica
- * en cada recompensa de misión y minijuego.
+ * Nueva prop:
+ *   authData ({ user, profile, stats } | null) — respuesta del backend
  */
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import "../styles/globals.css";
@@ -42,17 +26,18 @@ import SettingsScreen  from "./SettingsScreen";
 import { NOTIFICATIONS_DATA } from "../data/settings";
 import { STATS, INITIAL_STATS } from "../data/constants";
 import { TITLES_DATA }          from "../data/shop";
+import { mapProfile, mapStats } from "../services/api";
 
-// ── ID de usuario sanitizado (sin espacios, minúsculas) ──────────
+// ── ID de usuario sanitizado ─────────────────────────────────────
 const sanitize = (name) => (name || "user").toLowerCase().replace(/\s+/g, "_");
 
 // ── Claves de localStorage por usuario ──────────────────────────
 const lsTitles  = (u) => `rpglog_titles_${u}`;
-const lsCustoms   = (u) => `rpglog_customs_${u}`;
-const lsSlots     = (u) => `rpglog_slots_${u}`;   // Set serializado de slots desbloqueados
+const lsCustoms = (u) => `rpglog_customs_${u}`;
+const lsSlots   = (u) => `rpglog_slots_${u}`;
 const lsNotifs  = (u) => `rpglog_notifs_${u}`;
 const lsRecords = (u) => `rpglog_records_${u}`;
-const lsGps     = (u) => `rpglog_gps_${u}`;      // boolean: GPS habilitado por el usuario
+const lsGps     = (u) => `rpglog_gps_${u}`;
 
 // ── Helpers localStorage ─────────────────────────────────────────
 function lsGet(key, fallback) {
@@ -70,8 +55,8 @@ function applyXpGain(currentXp, gained, currentMax, currentLevel, maxMult) {
   return { newXp: xp, newLevel: level, newMax: max };
 }
 
-// ── Perfiles iniciales ───────────────────────────────────────────
-const buildNewUser      = (name) => ({ name, avatar:"🧙", title:'"Aventurero"',  level:1,  xp:0,    xpMax:300  });
+// ── Perfiles iniciales (modo invitado / sin authData) ────────────
+const buildNewUser      = (name) => ({ name, avatar:"🧙", title:'"Aventurero"',        level:1,  xp:0,    xpMax:300  });
 const buildExistingUser = (name) => ({ name, avatar:"🧙", title:'"Aprendiz del Caos"', level:12, xp:2340, xpMax:3000 });
 
 // ── Estado inicial de títulos ────────────────────────────────────
@@ -81,7 +66,7 @@ function loadTitlesState(userId) {
   return { ownedIds: new Set(["t0","t1","t2"]), equippedId: "t0" };
 }
 
-// ── Timestamp legible "AHORA" / "HH:MM" ─────────────────────────
+// ── Timestamp legible ────────────────────────────────────────────
 function nowLabel() {
   const d = new Date();
   return `HOY ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
@@ -90,8 +75,12 @@ function nowLabel() {
 let _notifIdCounter = Date.now();
 const nextId = () => ++_notifIdCounter;
 
-export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
-  const userId = useMemo(() => sanitize(initialName), [initialName]);
+export default function HomeScreen({ initialName, isNewAccount, authData, onLogout }) {
+  // userId: preferimos el _id del backend para aislar localStorage por cuenta real
+  const userId = useMemo(() => {
+    if (authData?.user?._id) return sanitize(authData.user._id);
+    return sanitize(initialName);
+  }, [initialName, authData]);
 
   const [activePage,    setActivePage]    = useState("home");
   const [showDropdown,  setShowDropdown]  = useState(false);
@@ -99,12 +88,27 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
   const [showHamburger, setShowHamburger] = useState(false);
   const [completedToday,setCompletedToday]= useState([]);
 
-  // ── Perfil — 100% local (localStorage por usuario) ──────────────
-  const [user,  setUser]  = useState(() => isNewAccount ? buildNewUser(initialName) : buildExistingUser(initialName));
-  const [stats, setStats] = useState(() => (isNewAccount ? INITIAL_STATS : STATS).map(s => ({ ...s })));
-  const [coins, setCoins] = useState(isNewAccount ? 0 : 1240);
+  // ── Perfil — usa datos del backend si están disponibles ─────────
+  const [user, setUser] = useState(() => {
+    if (authData?.profile && authData?.user) {
+      return mapProfile(authData.profile, authData.user);
+    }
+    return isNewAccount ? buildNewUser(initialName) : buildExistingUser(initialName);
+  });
 
-  // ── Notificaciones (persistidas por usuario) ─────────────────
+  const [stats, setStats] = useState(() => {
+    if (authData?.stats?.length) {
+      return mapStats(authData.stats);
+    }
+    return (isNewAccount ? INITIAL_STATS : STATS).map(s => ({ ...s }));
+  });
+
+  const [coins, setCoins] = useState(() => {
+    if (authData?.profile) return authData.profile.coins ?? 0;
+    return isNewAccount ? 0 : 1240;
+  });
+
+  // ── Notificaciones ───────────────────────────────────────────────
   const [notifs, setNotifsRaw] = useState(() => lsGet(lsNotifs(userId), NOTIFICATIONS_DATA));
   const setNotifs = useCallback((val) => {
     setNotifsRaw(prev => {
@@ -118,22 +122,21 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
     setNotifs(prev => [{ ...notif, id: nextId(), read: false, time: nowLabel() }, ...prev].slice(0, 50));
   }, [setNotifs]);
 
-  // ── Récords de minijuegos (para detectar nuevos máximos) ─────
+  // ── Récords de minijuegos ────────────────────────────────────────
   const [records, setRecords] = useState(() => lsGet(lsRecords(userId), {}));
 
-  // ── GPS state ────────────────────────────────────────────────
+  // ── GPS ──────────────────────────────────────────────────────────
   const [gpsEnabled,  setGpsEnabled]  = useState(() => lsGet(lsGps(userId), false));
-  const [gpsStatus,   setGpsStatus]   = useState("disabled"); // disabled|requesting|active|denied|unsupported
-  const [lastCoords,  setLastCoords]  = useState(null);  // { latitude, longitude, accuracy, capturedAt }
-  const gpsWatchRef = useRef(null); // watchPosition ID
+  const [gpsStatus,   setGpsStatus]   = useState("disabled");
+  const [lastCoords,  setLastCoords]  = useState(null);
+  const gpsWatchRef = useRef(null);
 
-  // ── Títulos ──────────────────────────────────────────────────
+  // ── Títulos ──────────────────────────────────────────────────────
   const [titlesState, setTitlesState] = useState(() => loadTitlesState(userId));
   const { ownedIds, equippedId } = titlesState;
 
-  // ── Misiones custom + slots desbloqueados ───────────────────
+  // ── Misiones custom + slots ──────────────────────────────────────
   const [customMissions,   setCustomMissionsRaw] = useState(() => lsGet(lsCustoms(userId), []));
-  // unlockedSlots: Set de índices comprados — ninguno por defecto (todos bloqueados)
   const [unlockedSlots,    setUnlockedSlotsRaw]  = useState(() => new Set(lsGet(lsSlots(userId), [])));
 
   const setCustomMissions = useCallback((val) => {
@@ -143,18 +146,18 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
   const setUnlockedSlots = useCallback((val) => {
     setUnlockedSlotsRaw(prev => {
       const next = typeof val === "function" ? val(prev) : val;
-      lsSet(lsSlots(userId), [...next]); // serializar Set como array
+      lsSet(lsSlots(userId), [...next]);
       return next;
     });
   }, [userId]);
 
-  // ── Bonus del título equipado ────────────────────────────────
+  // ── Bonus del título equipado ────────────────────────────────────
   const titleBonus = useMemo(() => {
     const t = TITLES_DATA.find(t => t.id === equippedId) || TITLES_DATA[0];
     return t.bonus || { xpGlobal:1.0, coinBonus:0, xpStat:null, xpStatMult:1.0 };
   }, [equippedId]);
 
-  // ── Notificación de misión especial al llegar a nivel 5 ──────
+  // ── Notificación de misión especial al llegar a nivel 5 ─────────
   const prevLevelRef = useRef(user.level);
   useEffect(() => {
     const prev = prevLevelRef.current;
@@ -164,7 +167,7 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
     prevLevelRef.current = user.level;
   }, [user.level, addNotification]);
 
-  // ── Monitor: timer de misiones custom expirado ───────────────
+  // ── Monitor timer de misiones custom ────────────────────────────
   const notifiedCustomRef = useRef(new Set());
   useEffect(() => {
     const id = setInterval(() => {
@@ -177,12 +180,11 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
           }
         }
       });
-    }, 5000); // revisa cada 5s
+    }, 5000);
     return () => clearInterval(id);
   }, [customMissions, addNotification]);
 
-  // ── Aplicar recompensas con bonus de título ──────────────────
-  // Retorna { finalXp, finalCoins }
+  // ── Aplicar recompensas con bonus de título ──────────────────────
   const applyRewards = useCallback((xp, coinAmt, statName, statId) => {
     const boosted   = Math.round(xp * titleBonus.xpGlobal);
     const finalXp   = (titleBonus.xpStat && titleBonus.xpStat === statId) ? Math.round(boosted * titleBonus.xpStatMult) : boosted;
@@ -195,22 +197,17 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
         return { ...s, xp: newXp, lv: nl, max: newMax };
       }));
     }
-
     setUser(prev => {
       const { newXp, newLevel: nl, newMax } = applyXpGain(prev.xp, finalXp, prev.xpMax, prev.level, 1.5);
       return { ...prev, xp: newXp, level: nl, xpMax: newMax };
     });
     setCoins(prev => prev + finalCoins);
-
     return { finalXp, finalCoins };
   }, [titleBonus]);
 
-  // ── GPS — iniciar/detener watcher ──────────────────────────────
-  // Se activa cuando gpsEnabled=true y se detiene cuando se desactiva.
-  // useRef guarda el watchId para poder limpiar correctamente.
+  // ── GPS watcher ──────────────────────────────────────────────────
   useEffect(() => {
     if (!gpsEnabled) {
-      // Detener watcher existente
       if (gpsWatchRef.current !== null) {
         navigator.geolocation?.clearWatch(gpsWatchRef.current);
         gpsWatchRef.current = null;
@@ -219,53 +216,32 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
       setLastCoords(null);
       return;
     }
-
-    if (!navigator.geolocation) {
-      setGpsStatus("unsupported");
-      return;
-    }
-
+    if (!navigator.geolocation) { setGpsStatus("unsupported"); return; }
     setGpsStatus("requesting");
-
     gpsWatchRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         setGpsStatus("active");
-        setLastCoords({
-          latitude:   pos.coords.latitude,
-          longitude:  pos.coords.longitude,
-          accuracy:   pos.coords.accuracy,
-          capturedAt: new Date().toISOString(),
-        });
+        setLastCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy, capturedAt: new Date().toISOString() });
       },
-      () => {
-        setGpsStatus("denied");
-        setGpsEnabled(false);
-        lsSet(lsGps(userId), false);
-      },
+      () => { setGpsStatus("denied"); setGpsEnabled(false); lsSet(lsGps(userId), false); },
       { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 }
     );
-
     return () => {
-      if (gpsWatchRef.current !== null) {
-        navigator.geolocation?.clearWatch(gpsWatchRef.current);
-        gpsWatchRef.current = null;
-      }
+      if (gpsWatchRef.current !== null) { navigator.geolocation?.clearWatch(gpsWatchRef.current); gpsWatchRef.current = null; }
     };
   }, [gpsEnabled, userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Toggle GPS desde ajustes ────────────────────────────────
   const handleToggleGps = useCallback(() => {
     const next = !gpsEnabled;
     setGpsEnabled(next);
     lsSet(lsGps(userId), next);
   }, [gpsEnabled, userId]);
 
-  // ── Callback: misión del sistema completada ──────────────────
+  // ── Callback: misión del sistema completada ──────────────────────
   const handleMissionDone = useCallback((mission, rawXp) => {
     const statNames = mission.stats ? mission.stats.map(s => s.label) : [mission.stat];
     const xpPerStat = Math.round(rawXp / statNames.length);
 
-    // Aplicar a cada stat de la misión
     setStats(prev => prev.map(s => {
       if (!statNames.includes(s.name)) return s;
       const boosted = Math.round(xpPerStat * titleBonus.xpGlobal * (titleBonus.xpStat === s.id ? titleBonus.xpStatMult : 1));
@@ -273,7 +249,7 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
       return { ...s, xp: newXp, lv: newLevel, max: newMax };
     }));
 
-    const finalXp    = Math.round(rawXp   * titleBonus.xpGlobal);
+    const finalXp    = Math.round(rawXp * titleBonus.xpGlobal);
     const finalCoins = mission.coins + titleBonus.coinBonus;
 
     setUser(prev => {
@@ -283,60 +259,40 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
     setCoins(prev => prev + finalCoins);
     setCompletedToday(prev => [...prev, {
       id: mission.id, name: mission.name,
-      stat:  statNames[0], icon: mission.stats ? mission.stats[0].icon : mission.icon,
+      stat: statNames[0], icon: mission.stats ? mission.stats[0].icon : mission.icon,
       color: mission.stats ? mission.stats[0].color : mission.color,
       earnedXp: finalXp, coins: finalCoins,
     }]);
 
-    // Notificación de misión completada
     addNotification({
       icon:  mission.stats ? "⚡" : mission.icon || "⚔️",
       title: "¡MISIÓN COMPLETADA!",
       desc:  `"${mission.name}" — +${finalXp} XP · 🪙 +${finalCoins}`,
     });
-
-    // Notificación de subida de nivel (se detecta via useEffect del level)
-    // ya manejado arriba con prevLevelRef
   }, [titleBonus, addNotification]);
 
-  // ── Callback: minijuego terminado ────────────────────────────
+  // ── Callback: minijuego terminado ────────────────────────────────
   const handleGameDone = useCallback((xp, gameCoins, statName, gameId, score) => {
     const { finalXp, finalCoins } = applyRewards(xp, gameCoins, statName, null);
-
-    // Notificación de recompensa
-    addNotification({
-      icon: "🎮",
-      title: "¡PARTIDA TERMINADA!",
-      desc: `+${finalXp} XP en ${statName} · 🪙 +${finalCoins} — Puntuación: ${score || xp}`,
-    });
-
-    // Detectar nuevo récord
+    addNotification({ icon:"🎮", title:"¡PARTIDA TERMINADA!", desc:`+${finalXp} XP en ${statName} · 🪙 +${finalCoins} — Puntuación: ${score || xp}` });
     if (gameId && score !== undefined) {
       const prev = records[gameId] || 0;
       if (score > prev) {
         const newRec = { ...records, [gameId]: score };
         setRecords(newRec);
         lsSet(lsRecords(userId), newRec);
-        addNotification({
-          icon: "🏆",
-          title: "¡NUEVO RÉCORD!",
-          desc: `Superaste tu récord en ${gameId}: ${score} puntos (anterior: ${prev})`,
-        });
+        addNotification({ icon:"🏆", title:"¡NUEVO RÉCORD!", desc:`Superaste tu récord en ${gameId}: ${score} puntos (anterior: ${prev})` });
       }
     }
   }, [applyRewards, addNotification, records, userId]);
 
-  // ── Callback: misión custom completada ───────────────────────
+  // ── Callback: misión custom completada ──────────────────────────
   const handleCustomMissionComplete = useCallback((mission) => {
     const { finalXp, finalCoins } = applyRewards(mission.xp, mission.cost, null, null);
-    addNotification({
-      icon: "⚙️",
-      title: "¡MISIÓN CUSTOM COMPLETADA!",
-      desc: `"${mission.name}" — +${finalXp} XP · 🪙 +${finalCoins}`,
-    });
+    addNotification({ icon:"⚙️", title:"¡MISIÓN CUSTOM COMPLETADA!", desc:`"${mission.name}" — +${finalXp} XP · 🪙 +${finalCoins}` });
   }, [applyRewards, addNotification]);
 
-  // ── Gestión de títulos ───────────────────────────────────────
+  // ── Gestión de títulos ───────────────────────────────────────────
   const handleBuyTitle = (title) => {
     setTitlesState(prev => {
       const next = { ownedIds: new Set([...prev.ownedIds, title.id]), equippedId: prev.equippedId };
@@ -364,7 +320,6 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
     setUser(prev => ({ ...prev, title: def.preview }));
   };
 
-  // ── Cerrar paneles al clic en fondo ──────────────────────────
   const handleAppClick = () => {
     if (showDropdown)   setShowDropdown(false);
     if (showNotifPanel) setShowNotifPanel(false);
@@ -394,7 +349,6 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
         user={user}
       />
 
-      {/* ── HOME ──────────────────────────────────────── */}
       {activePage === "home" && (
         <div className="page">
           <HeroSection user={user} />
@@ -403,7 +357,6 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
         </div>
       )}
 
-      {/* ── MISIONES ──────────────────────────────────── */}
       {activePage === "missions" && (
         <MissionsScreen
           onMissionDone={handleMissionDone}
@@ -414,12 +367,10 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
         />
       )}
 
-      {/* ── MINIJUEGOS ────────────────────────────────── */}
       {activePage === "minigames" && (
         <MiniGamesScreen onGameDone={handleGameDone} />
       )}
 
-      {/* ── TIENDA ────────────────────────────────────── */}
       {activePage === "shop" && (
         <ShopScreen
           coins={coins}
@@ -438,7 +389,6 @@ export default function HomeScreen({ initialName, isNewAccount, onLogout }) {
         />
       )}
 
-      {/* ── AJUSTES ───────────────────────────────────── */}
       {isSettingsPage && (
         <SettingsScreen
           section={activePage}

@@ -1,20 +1,12 @@
 /**
  * AuthScreen.jsx — Pantalla de autenticación
  * ─────────────────────────────────────────────────────
- * Muestra la interfaz de login y registro. Al autenticarse
- * pasa el nombre del usuario hacia App.jsx via onLogin().
+ * handleSuccess ahora recibe authData del backend y lo
+ * propaga a App.jsx para inicializar HomeScreen con datos reales.
  *
  * Props:
- *   onLogin(username, isNew) — callback hacia App.jsx
- *     username — nombre del héroe (de signup) o email-prefix (de login)
- *     isNew    — true si es registro nuevo (comienza nivel 1)
- *
- * Estado:
- *   tab     — tab activa: "login" | "signup"
- *   success — { mode, name } al autenticarse (activa overlay de éxito)
- *
- * El overlay de éxito muestra el nombre del usuario y una barra de
- * carga de 1.8s antes de redirigir al dashboard.
+ *   onLogin(username, isNew, authData) — callback hacia App.jsx
+ *     authData: { user, profile, stats } del backend, o null si es invitado
  */
 import { useState, useEffect } from "react";
 import "../styles/globals.css";
@@ -24,7 +16,6 @@ import Stars      from "../components/Stars";
 import LoginForm  from "../components/LoginForm";
 import SignupForm from "../components/SignupForm";
 
-// Overlay que aparece brevemente al autenticarse
 const SuccessOverlay = ({ mode, name }) => (
   <div className="success-overlay">
     <div className="success-icon">{mode === "login" ? "⚔️" : "🏆"}</div>
@@ -41,18 +32,16 @@ const SuccessOverlay = ({ mode, name }) => (
 
 export default function AuthScreen({ onLogin }) {
   const [tab, setTab]         = useState("login");
-  const [success, setSuccess] = useState(null); // { mode, name } | null
+  const [success, setSuccess] = useState(null); // { mode, name, authData }
 
-  // Recibe (mode, username) desde LoginForm o SignupForm
-  const handleSuccess = (mode, username) => {
-    setSuccess({ mode, name: username });
-    // Espera que termine la animación del overlay (1.8s barra + 0.3s margen)
+  // authData viene de LoginForm/SignupForm (puede ser null para invitado)
+  const handleSuccess = (mode, username, authData) => {
+    setSuccess({ mode, name: username, authData });
     setTimeout(() => {
-      onLogin(username, mode === "signup");
+      onLogin(username, mode === "signup", authData);
     }, 2100);
   };
 
-  // Limpia el overlay si el componente se desmonta antes de que termine
   useEffect(() => {
     if (!success) return;
     const t = setTimeout(() => setSuccess(null), 2100);
@@ -69,7 +58,6 @@ export default function AuthScreen({ onLogin }) {
         <div className="card-corner-bl" />
         <div className="card-corner-br" />
 
-        {/* Header con logo */}
         <div className="card-header">
           <div className="logo-row">
             <span className="logo-icon">🗡️</span>
@@ -82,7 +70,6 @@ export default function AuthScreen({ onLogin }) {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="tabs">
           <button
             className={`tab-btn${tab === "login" ? " active" : ""}`}
@@ -98,12 +85,10 @@ export default function AuthScreen({ onLogin }) {
           </button>
         </div>
 
-        {/* Formulario activo */}
         {tab === "login"
           ? <LoginForm  key="login"  onSuccess={handleSuccess} />
           : <SignupForm key="signup" onSuccess={handleSuccess} />}
 
-        {/* Footer: links legales + restablecer contraseña (solo en login) */}
         <div className="card-footer">
           <button className="footer-link" onClick={() => alert("Términos y condiciones — próximamente.")}>
             TÉRMINOS Y CONDICIONES

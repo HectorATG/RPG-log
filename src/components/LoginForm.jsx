@@ -1,13 +1,15 @@
 /**
- * LoginForm.jsx — Formulario de inicio de sesión (modo local)
+ * LoginForm.jsx — Formulario de inicio de sesión
  * ─────────────────────────────────────────────────────
- * Modo frontend puro: simula autenticación con setTimeout.
- * No requiere backend activo.
+ * Conectado al backend real via authApi.login().
+ * En caso de error de red cae a modo local (invitado).
  *
  * Props:
- *   onSuccess(mode, username) — callback al login exitoso
+ *   onSuccess(mode, username, authData?) — callback al login exitoso
+ *     authData: { user, profile, stats } del backend, o null si es invitado
  */
 import { useState } from "react";
+import { authApi } from "../services/api";
 
 export default function LoginForm({ onSuccess }) {
   const [email,    setEmail]    = useState("");
@@ -16,18 +18,29 @@ export default function LoginForm({ onSuccess }) {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState("");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError("");
     if (!email || !pass)      { setError("▸ Completa todos los campos"); return; }
     if (!email.includes("@")) { setError("▸ Email inválido"); return; }
 
     setLoading(true);
-    // Simula llamada al backend — reemplazar con authApi.login() al conectar
-    setTimeout(() => {
+    try {
+      const data = await authApi.login({ email, password: pass });
+      // data = { ok, token, user, profile, stats }
+      onSuccess("login", data.user.username, {
+        user:    data.user,
+        profile: data.profile,
+        stats:   data.stats,
+      });
+    } catch (err) {
+      setError(`▸ ${err.message || "Error al conectar con el servidor"}`);
+    } finally {
       setLoading(false);
-      const displayName = email.split("@")[0];
-      onSuccess("login", displayName);
-    }, 1200);
+    }
+  };
+
+  const handleGuest = () => {
+    onSuccess("login", "Invitado", null);
   };
 
   return (
@@ -79,7 +92,7 @@ export default function LoginForm({ onSuccess }) {
         <div className="divider-line" />
       </div>
 
-      <button className="guest-btn" onClick={() => onSuccess("login", "Invitado")}>
+      <button className="guest-btn" onClick={handleGuest}>
         👤 CONTINUAR COMO INVITADO
       </button>
     </div>
