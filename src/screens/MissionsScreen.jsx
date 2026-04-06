@@ -38,6 +38,7 @@ import {
   STAT_GROUPS,
 } from "../data/constants";
 
+import { questsApi, mapQuest, getToken } from "../services/api";
 import MissionCard    from "../components/MissionCard";
 import SpecialMission from "../components/SpecialMission";
 import CompleteModal  from "../components/CompleteModal";
@@ -168,100 +169,162 @@ const GroupedMissions = ({ missions, filter, onComplete, type }) => {
 
 // ── Componente principal ─────────────────────────────────────────
 export default function MissionsScreen({ onMissionDone, userLevel = 1, userId = "default", gpsEnabled = false, lastCoords = null }) {
-  // Carga el estado inicial desde localStorage aislado por userId
-  const [state, setState] = useState(() => loadInitialState(userId));
-  const { dailyMissions, weeklyMissions, specialDone, dailyResetAt, weeklyResetAt } = state;
+  const isAuth = !!getToken();
+  const [localState, setLocalState] = useState(() => loadInitialState(userId));
+  const { weeklyMissions, specialDone, dailyResetAt, weeklyResetAt } = localState;
+
+  const [dailyMissions, setDailyMissions] = useState(() =>
+    isAuth ? [] : localState.dailyMissions
+  );
+
+  const [loadingDaily, setLoadingDaily] = useState(isAuth);
+  const [dailyError,   setDailyError]   = useState(null);
 
   const [modal,  setModal]  = useState(null);
   const [filter, setFilter] = useState(FILTER_ALL);
 
-  // Timers visuales: se recalculan cada segundo
   const [dailyLeft,  setDailyLeft]  = useState(() => Math.max(0, MS_DAY  - (Date.now() - dailyResetAt)));
   const [weeklyLeft, setWeeklyLeft] = useState(() => Math.max(0, MS_WEEK - (Date.now() - weeklyResetAt)));
 
-  // ── Persiste en localStorage cada vez que el estado cambia ───
   useEffect(() => {
     try {
-      localStorage.setItem(lsKey(userId), JSON.stringify(state));
+      const toSave = {
+        dailyMissions: isAuth ? [] : dailyMissions,
+        weeklyMissions: localState.weeklyMissions,
+        specialDone:    localState.specialDone,
+        dailyResetAt:   localState.dailyResetAt,
+        weeklyResetAt:  localState.weeklyResetAt,
+      };
+      localStorage.setItem(lsKey(userId), JSON.stringify(toSave));
     } catch (_) {}
-  }, [state, userId]);
+  }, [localState, dailyMissions, userId, isAuth]);
 
-  // ── Timer: actualiza cada segundo ────────────────────────────
+  useEffect(() => {
+    if (!isAuth) return;
+
+    const load = async () => {
+      setLoadingDaily(true);
+      setDailyError(null);
+      try {
+        await questsApi.seedDaily();
+        const data = await questsApi.list();
+        const todayKey = new Date().toISOString().split("T")[0];
+        const daily = (data.quests || [])
+          .filter(q => q.type === "daily" && q.dayKey === todayKey && !q.deleted)
+          .map(mapQuest);
+        setDailyMissions(daily);
+      } catch (err) {
+        setDailyError(err.message);
+        setDailyMissions(localState.dailyMissions);
+      } finally {
+        setLoadingDaily(false);
+      }
+    };
+
+    load();
+  }, [isAuth]);
+
   useEffect(() => {
     const tick = () => {
       const now = Date.now();
-      const dl  = Math.max(0, MS_DAY  - (now - state.dailyResetAt));
-      const wl  = Math.max(0, MS_WEEK - (now - state.weeklyResetAt));
+      const dl  = Math.max(0, MS_DAY  - (now - localState.dailyResetAt));
+      const wl  = Math.max(0, MS_WEEK - (now - localState.weeklyResetAt));
       setDailyLeft(dl);
       setWeeklyLeft(wl);
 
-      // Auto-reset si el tiempo llegó a 0 mientras la pantalla está abierta
       if (dl === 0) {
-        setState(prev => ({
+        if (isAuth) {
+          setDailyMissions([]);
+          setLoadingDaily(true);
+          questsApi.seedDaily()
+            .then(() => questsApi.list())
+            .then(data => {
+              const todayKey = new Date().toISOString().split("T")[0];
+              setDailyMissions((data.quests || [])
+                .filter(q => q.type === "daily" && q.dayKey === todayKey && !q.deleted)
+                .map(mapQuest)
+              );
+            })
+            .catch(() => {})
+            .finally(() => setLoadingDaily(false));
+        }
+        setLocalState(prev => ({
           ...prev,
           dailyMissions: DAILY_MISSIONS.map(m => ({ ...m })),
-          specialDone:   false,
-          dailyResetAt:  now,
+          specialDone: false,
+          dailyResetAt: now,
         }));
       }
       if (wl === 0) {
-        setState(prev => ({
+        setLocalState(prev => ({
           ...prev,
           weeklyMissions: WEEKLY_MISSIONS.map(m => ({ ...m })),
-          weeklyResetAt:  now,
+          weeklyResetAt: now,
         }));
       }
     };
 
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [state.dailyResetAt, state.weeklyResetAt]);
+  }, [localState.dailyResetAt, localState.weeklyResetAt, isAuth]);
 
-  // ── Abrir modal al pulsar COMPLETAR ─────────────────────────
   const openModal = useCallback((mission) => setModal(mission), []);
 
-
-  // ── Confirmar recompensas en el modal ───────────────────────
-  // finalXp  — XP calculada (con o sin bonus foto)
-  // questId  — _id de la misión en el backend (para evidencias)
-  // gpsCoords — { latitude, longitude, accuracy, capturedAt } | null
-  const handleConfirm = (finalXp, questId, gpsCoords) => {
+  const handleConfirm = async (finalXp, questId, gpsCoords) => {
     const mission = modal;
     setModal(null);
     if (!mission) return;
 
     const isSpecial = !!mission.stats;
-    const isDaily   = dailyMissions.some((d) => d.id === mission.id);
-    const isWeekly  = weeklyMissions.some((w) => w.id === mission.id);
+    const missionId = mission._id || mission.id;
+    const isDaily   = dailyMissions.some(d => (d._id || d.id) === missionId);
+    const isWeekly  = weeklyMissions.some(w => w.id === missionId);
 
-    setState(prev => {
-      let { dailyMissions: dm, weeklyMissions: wm, specialDone: sd } = prev;
+    if (isAuth && isDaily && questId) {
+      try {
+        await questsApi.complete(questId);
+        if (mission.photoEvidenceEnabled && finalXp > mission.xp) {
+          questsApi.submitPhotoEvidence(questId).catch(() => {});
+        }
+        if (mission.locationEvidenceEnabled && gpsCoords) {
+          questsApi.submitLocationEvidence(questId, gpsCoords).catch(() => {});
+        }
+        setDailyMissions(prev => prev.map(m => ((m._id || m.id) === questId ? { ...m, done: true } : m)));
+      } catch (err) {
+        console.error("Error completando misión en backend:", err.message);
+        setDailyMissions(prev => prev.map(m => ((m._id || m.id) === questId ? { ...m, done: true } : m)));
+      }
 
-      if (isSpecial) {
-        // Marcar misión especial como completada
-        sd = true;
+      setLocalState(prev => ({
+        ...prev,
+        weeklyMissions: prev.weeklyMissions.map(w => {
+          if (w.stat !== mission.stat || w.done) return w;
+          const newProgress = Math.min(w.progress + (mission.total || 1), w.total);
+          return { ...w, progress: newProgress };
+        }),
+      }));
 
-      } else if (isDaily) {
-        // Marcar diaria como hecha
-        dm = dm.map(m => m.id === mission.id
-          ? { ...m, done: true, progress: m.total }
-          : m
-        );
-        // Avanzar semanales del mismo stat
-        wm = wm.map(w => {
+    } else if (isSpecial) {
+      setLocalState(prev => ({ ...prev, specialDone: true }));
+
+    } else if (!isAuth && isDaily) {
+      setDailyMissions(prev => prev.map(m => m.id === mission.id ? { ...m, done: true, progress: m.total } : m));
+      setLocalState(prev => ({
+        ...prev,
+        weeklyMissions: prev.weeklyMissions.map(w => {
           if (w.stat !== mission.stat || w.done) return w;
           const newProgress = Math.min(w.progress + mission.total, w.total);
           return { ...w, progress: newProgress };
-        });
+        }),
+      }));
 
-      } else if (isWeekly) {
-        wm = wm.map(m => m.id === mission.id ? { ...m, done: true } : m);
-      }
+    } else if (isWeekly) {
+      setLocalState(prev => ({
+        ...prev,
+        weeklyMissions: prev.weeklyMissions.map(m => m.id === mission.id ? { ...m, done: true } : m),
+      }));
+    }
 
-      return { ...prev, dailyMissions: dm, weeklyMissions: wm, specialDone: sd };
-    });
-
-    // Notificar a HomeScreen → actualiza XP, stat y monedas
     if (onMissionDone) onMissionDone(mission, finalXp);
   };
 
@@ -305,12 +368,20 @@ export default function MissionsScreen({ onMissionDone, userLevel = 1, userId = 
           <span className="refresh-timer">{formatTimeLeft(dailyLeft)}</span>
         </div>
 
-        <GroupedMissions
-          missions={dailyMissions}
-          filter={filter}
-          onComplete={openModal}
-          type="daily"
-        />
+        {loadingDaily ? (
+          <div style={{ fontFamily:"var(--pixel)", fontSize:"0.46rem", color:"var(--text-dim)", padding:"1.5rem", textAlign:"center" }}>
+            ⏳ CARGANDO MISIONES...
+          </div>
+        ) : dailyError ? (
+          <div style={{ fontFamily:"var(--pixel)", fontSize:"0.46rem", color:"var(--red)", padding:"1rem", textAlign:"center" }}>
+            ⚠ {dailyError}
+            <br /><span style={{ color:"var(--text-dim)" }}>Mostrando misiones locales</span>
+          </div>
+        ) : null}
+
+        {!loadingDaily && (
+          <GroupedMissions missions={dailyMissions} filter={filter} onComplete={openModal} type="daily" />
+        )}
       </div>
 
       {/* ── Misiones semanales ────────────────────────────── */}
@@ -329,23 +400,12 @@ export default function MissionsScreen({ onMissionDone, userLevel = 1, userId = 
           <span className="refresh-timer">{formatTimeLeft(weeklyLeft)}</span>
         </div>
 
-        <GroupedMissions
-          missions={weeklyMissions}
-          filter={filter}
-          onComplete={openModal}
-          type="weekly"
-        />
+        <GroupedMissions missions={weeklyMissions} filter={filter} onComplete={openModal} type="weekly" />
       </div>
 
       {/* ── Modal de recompensas ──────────────────────────── */}
       {modal && (
-        <CompleteModal
-          mission={modal}
-          onClose={() => setModal(null)}
-          onDone={handleConfirm}
-          gpsEnabled={gpsEnabled}
-          lastCoords={lastCoords}
-        />
+        <CompleteModal mission={modal} onClose={() => setModal(null)} onDone={handleConfirm} gpsEnabled={gpsEnabled} lastCoords={lastCoords} />
       )}
     </div>
   );
