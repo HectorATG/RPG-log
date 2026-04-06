@@ -16,8 +16,8 @@ import HomeScreen from "./screens/HomeScreen";
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
 
-  const handleLogin = (username, isNew = false) => {
-    setCurrentUser({ name: username, isNewAccount: isNew });
+  const handleLogin = (username, isNew = false, authData = null) => {
+    setCurrentUser({ name: username, isNewAccount: isNew, authData });
   };
 
   const handleLogout = () => setCurrentUser(null);
@@ -30,6 +30,7 @@ export default function App() {
     <HomeScreen
       initialName={currentUser.name}
       isNewAccount={currentUser.isNewAccount}
+      authData={currentUser.authData}
       onLogout={handleLogout}
     />
   );

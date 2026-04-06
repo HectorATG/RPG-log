@@ -60,12 +60,12 @@ const STAT_META = {
 
 export function mapProfile(profile, user) {
   return {
-    name:   user?.username  || "Héroe",
+    name:   user?.username  ?? "Héroe",
     avatar: "🧙",
     title:  profile?.equippedTitleId ? `"${profile.equippedTitleId}"` : '"Aventurero"',
-    level:  profile?.level          || 1,
-    xp:     profile?.xpCurrentLevel || 0,
-    xpMax:  profile?.xpNextLevel    || 300,
+    level:  profile?.level          ?? 1,
+    xp:     profile?.xpCurrentLevel ?? 0,
+    xpMax:  profile?.xpNextLevel    ?? 300,
   };
 }
 

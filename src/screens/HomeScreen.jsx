@@ -24,7 +24,7 @@ import ShopScreen      from "./ShopScreen";
 import SettingsScreen  from "./SettingsScreen";
 
 import { NOTIFICATIONS_DATA } from "../data/settings";
-import { STATS, INITIAL_STATS } from "../data/constants";
+import { INITIAL_STATS } from "../data/constants";
 import { TITLES_DATA }          from "../data/shop";
 import { mapProfile, mapStats } from "../services/api";
 
@@ -56,8 +56,7 @@ function applyXpGain(currentXp, gained, currentMax, currentLevel, maxMult) {
 }
 
 // ── Perfiles iniciales (modo invitado / sin authData) ────────────
-const buildNewUser      = (name) => ({ name, avatar:"🧙", title:'"Aventurero"',        level:1,  xp:0,    xpMax:300  });
-const buildExistingUser = (name) => ({ name, avatar:"🧙", title:'"Aprendiz del Caos"', level:12, xp:2340, xpMax:3000 });
+const buildNewUser = (name) => ({ name, avatar:"🧙", title:'"Aventurero"', level:1, xp:0, xpMax:300 });
 
 // ── Estado inicial de títulos ────────────────────────────────────
 function loadTitlesState(userId) {
@@ -93,19 +92,19 @@ export default function HomeScreen({ initialName, isNewAccount, authData, onLogo
     if (authData?.profile && authData?.user) {
       return mapProfile(authData.profile, authData.user);
     }
-    return isNewAccount ? buildNewUser(initialName) : buildExistingUser(initialName);
+    return buildNewUser(initialName);
   });
 
   const [stats, setStats] = useState(() => {
     if (authData?.stats?.length) {
       return mapStats(authData.stats);
     }
-    return (isNewAccount ? INITIAL_STATS : STATS).map(s => ({ ...s }));
+    return INITIAL_STATS.map(s => ({ ...s }));
   });
 
   const [coins, setCoins] = useState(() => {
     if (authData?.profile) return authData.profile.coins ?? 0;
-    return isNewAccount ? 0 : 1240;
+    return 0;
   });
 
   // ── Notificaciones ───────────────────────────────────────────────
