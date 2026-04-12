@@ -5,6 +5,9 @@
  * El Service Worker las envía automáticamente al reconectarse.
  */
 
+// ✅ IMPORTS SIEMPRE ARRIBA
+import { getToken } from "./api";
+
 const DB_NAME    = "rpglog-offline";
 const DB_VERSION = 1;
 const STORE_NAME = "pending";
@@ -22,8 +25,6 @@ function openDB() {
     req.onerror   = () => reject(req.error);
   });
 }
-
-import { getToken } from "./api";
 
 // Guardar una acción pendiente para cuando vuelva internet
 export async function savePendingAction(action) {
