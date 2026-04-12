@@ -13,13 +13,15 @@ import React from "react";
 import AuthScreen from "./screens/AuthScreen";
 import HomeScreen from "./screens/HomeScreen";
 import { useAuth } from "./contexts/AuthContext";
+import { usePWAInstall } from "./hooks/usePWAInstall";
+import PWAInstallBanner from "./components/PWAInstallBanner";
 
 export default function App() {
   const { user, loading, logout } = useAuth();
-
+  const { canInstall, install } = usePWAInstall();
   if (loading) {
     return (
-      <div style={{ fontFamily: "var(--pixel)", padding: "2rem", textAlign: "center" }}>
+      <div className="app-loading">
         ⏳ CARGANDO...
       </div>
     );
@@ -29,5 +31,10 @@ export default function App() {
     return <AuthScreen />;
   }
 
-  return <HomeScreen onLogout={logout} />;
+return (
+  <>
+    <HomeScreen onLogout={logout} />
+    <PWAInstallBanner canInstall={canInstall} onInstall={install} />
+  </>
+);
 }

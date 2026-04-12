@@ -66,7 +66,7 @@
 .logo-title { font-family: var(--pixel); font-size: 0.9rem; color: var(--gold); text-shadow: 0 0 12px rgba(245, 200, 66, 0.6), 2px 2px 0 rgba(0,0,0,0.8); letter-spacing: 0.04em; }
 .logo-sub { font-family: var(--vt); font-size: 1.15rem; color: var(--text-dim); letter-spacing: 0.15em; }
 .xp-bar-wrap { margin: 0.7rem 0 0; height: 5px; background: var(--border); }
-.xp-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--orange)); animation: xpGrow 2.5s ease-out both; }
+.xp-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--orange)); animation: xpGrow 2.5s ease-out both; --xp-w: 72%; }
 @keyframes xpGrow { from { width: 0%; } to { width: var(--xp-w, 60%); } }
 
 /* ══════════════════════════════

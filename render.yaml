@@ -1,9 +1,35 @@
 services:
+  # ── Backend API ─────────────────────────────────────────────────
+  - type: web
+    name: rpglog-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # ⚠️ Agrega estas variables en Render Dashboard → Environment:
+      #   MONGO_URI        = tu URI de MongoDB Atlas
+      #   JWT_SECRET       = tu clave secreta
+      #   CORS_ORIGIN      = https://rpg-log.onrender.com
+      #   VAPID_PUBLIC_KEY = tu clave VAPID pública
+      #   VAPID_PRIVATE_KEY= tu clave VAPID privada
+      #   VAPID_EMAIL      = mailto:tu@email.com
+
+  # ── Frontend (Static Site) ───────────────────────────────────────
   - type: web
     name: rpg-log
     runtime: static
     buildCommand: npm ci && npm run build
     staticPublishPath: ./build
+    envVars:
+      - key: VITE_API_URL
+        value: https://rpglog-backend.onrender.com
+      - key: REACT_APP_API_URL
+        value: https://rpglog-backend.onrender.com
     routes:
       - type: rewrite
         source: /*

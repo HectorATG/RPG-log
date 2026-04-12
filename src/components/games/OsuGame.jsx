@@ -108,30 +108,21 @@ export default function OsuGame({ onEnd }) {
           <div
             key={c.id}
             className="osu-circle"
-            style={{
-              left: `${c.x}%`, top: `${c.y}%`,
-              width: 68, height: 68,
-              background: `radial-gradient(circle at 35% 35%, ${c.color}ee, ${c.color}44)`,
-              border: `3px solid ${c.color}`,
-              boxShadow: `0 0 12px ${c.color}66`,
-            }}
+            style={{ left: `${c.x}%`, top: `${c.y}%`, "--cc": c.color }}
             onClick={() => hit(c.id, c.x, c.y)}
           >
             {/* Shrinking ring — shows time left */}
-            <div style={{
-              position: "absolute",
-              width: "150%", height: "150%",
-              borderRadius: "50%",
-              border: `2px solid ${c.color}66`,
-              animation: `ringIn ${c.lifetime}ms linear both`,
-            }} />
+            <div
+              className="osu-circle-ring"
+              style={{ animation: `ringIn ${c.lifetime}ms linear both` }}
+            />
           </div>
         ))}
         {feedbacks.map(f => (
           <div
             key={f.id}
             className={f.text === "MISS" ? "osu-miss" : "osu-hit"}
-            style={{ left: `${f.x}%`, top: `${f.y}%`, color: f.color }}
+            style={{ left: `${f.x}%`, top: `${f.y}%` }}
           >
             {f.text}
           </div>
@@ -139,9 +130,9 @@ export default function OsuGame({ onEnd }) {
       </div>
       <div className="osu-footer">
         <div className="osu-misses">
-          Misses: <span style={{ color: "var(--red)" }}>{misses}</span>
+          Misses: <span className="osu-miss-val">{misses}</span>
         </div>
-        <div className="osu-timer" style={{ color: timer <= 10 ? "var(--red)" : "var(--text-dim)" }}>
+        <div className={`osu-timer${timer <= 10 ? " danger" : ""}`}>
           {timer}s
         </div>
       </div>

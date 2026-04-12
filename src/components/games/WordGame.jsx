@@ -142,7 +142,7 @@ export default function WordGame({ onEnd }) {
   }
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"0.8rem", width:"100%", maxWidth:"340px" }}>
+    <div className="word-game-wrapper">
 
       {/* ── Temporizador visible ──────────────────── */}
       <div className="word-timer-wrap">
@@ -156,11 +156,7 @@ export default function WordGame({ onEnd }) {
         <div className="word-timer-track">
           <div
             className="word-timer-fill"
-            style={{
-              width: `${fraction * 100}%`,
-              background: barColor,
-              transition: "width 0.9s linear, background 0.3s ease",
-            }}
+            style={{ width: `${fraction * 100}%`, "--bar-color": barColor }}
           />
         </div>
       </div>

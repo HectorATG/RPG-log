@@ -167,7 +167,7 @@ export default function RhythmGame({ onEnd }) {
         <div className="game-start-hint">
           Las notas vienen de la derecha.<br />
           Golpéalas cuando lleguen al círculo.<br /><br />
-          <span style={{ letterSpacing: "0.1em" }}>
+          <span className="md-hint-keys">
             Carril superior → <strong>D</strong> &nbsp;|&nbsp; Carril inferior → <strong>K</strong>
           </span>
         </div>
@@ -181,7 +181,7 @@ export default function RhythmGame({ onEnd }) {
       {/* Score + combo HUD */}
       <div className="md-hud">
         <div className="md-hud-score">{score.toLocaleString()}</div>
-        <div className="md-hud-timer" style={{ color: timer <= 10 ? "var(--red)" : "var(--text-dim)" }}>
+        <div className={`md-hud-timer${timer <= 10 ? " danger" : ""}`}>
           {timer}s
         </div>
         {combo > 1 && (
@@ -199,12 +199,8 @@ export default function RhythmGame({ onEnd }) {
 
         {/* Hit zone — left side */}
         <div className="md-hit-zone">
-          <div className="md-hit-circle md-hit-circle-top"
-               style={{ borderColor: pressed[0] ? COLORS[0] : "rgba(255,255,255,0.25)",
-                        boxShadow: pressed[0] ? `0 0 16px ${COLORS[0]}` : "none" }} />
-          <div className="md-hit-circle md-hit-circle-bot"
-               style={{ borderColor: pressed[1] ? COLORS[1] : "rgba(255,255,255,0.25)",
-                        boxShadow: pressed[1] ? `0 0 16px ${COLORS[1]}` : "none" }} />
+          <div className={`md-hit-circle md-hit-circle-top${pressed[0] ? " pressed" : ""}`} />
+          <div className={`md-hit-circle md-hit-circle-bot${pressed[1] ? " pressed" : ""}`} />
         </div>
 
         {/* Vertical hit line */}
@@ -228,8 +224,7 @@ export default function RhythmGame({ onEnd }) {
         {feedbacks.slice(-4).map(f => (
           <div
             key={f.id}
-            className={`md-feedback md-feedback-${f.lane === 0 ? "top" : "bot"}`}
-            style={{ color: f.color }}
+            className={`md-feedback md-feedback-${f.lane === 0 ? "top" : "bot"} ${f.text === "PERFECT!" ? "perfect" : f.text === "GOOD" ? "good" : "miss"}`}
           >
             {f.text}
           </div>

@@ -98,7 +98,7 @@ export default function SimonGame({ onEnd }) {
   }
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"1rem" }}>
+    <div className="simon-wrapper">
 
       {/* Status */}
       <div className={`simon-status${feedback === "correct" ? " correct" : feedback === "wrong" ? " wrong" : ""}`}>
@@ -120,28 +120,14 @@ export default function SimonGame({ onEnd }) {
           return (
             <button
               key={c.id}
-              className={`simon-btn${isActive ? " lit" : ""}${isFail ? " wrong-flash" : ""}`}
-              style={{
-                background: isFail
-                  ? "#1a0a0a"
-                  : `color-mix(in srgb, ${c.color} ${isActive ? 88 : 20}%, #0d0d18)`,
-                border: `2px solid ${isActive ? c.color : "#2a2a3d"}`,
-                boxShadow: isActive && !isFail
-                  ? `0 0 18px ${c.color}99`
-                  : "none",
-                cursor: phase === "input" ? "pointer" : "default",
-                transform: isActive ? "scale(0.96)" : "scale(1)",
-                transition: "background 0.1s, box-shadow 0.1s, transform 0.08s, border-color 0.1s",
-              }}
+              className={`simon-btn${isActive ? " lit" : ""}${isFail ? " wrong-flash" : ""}${phase === "input" ? " interactive" : ""}`}
+              style={{ "--sc": c.color }}
               onClick={() => press(c.id)}
               disabled={phase !== "input"}
             >
-              <span style={{ fontSize:"1.6rem" }}>{c.label}</span>
+              <span className="simon-btn-icon">{c.label}</span>
               {isPlayerLit && (
-                <div style={{
-                  position:"absolute", bottom:4, left:"50%", transform:"translateX(-50%)",
-                  fontFamily:"var(--pixel)", fontSize:".3rem", color: c.color,
-                }}>
+                <div className="simon-btn-label" style={{ "--btn-c": c.color }}>
                   {c.name}
                 </div>
               )}
@@ -157,16 +143,16 @@ export default function SimonGame({ onEnd }) {
       </div>
 
       {/* Indicador visual de progreso de la secuencia */}
-      <div style={{ display:"flex", gap:".3rem" }}>
+      <div className="simon-progress">
         {seq.map((colorId, idx) => {
           const c = SIMON_COLORS[colorId];
           const done = idx < playerSeq.length;
           return (
-            <div key={idx} style={{
-              width:10, height:10, borderRadius:"50%",
-              background: done ? c.color : "var(--border)",
-              transition: "background 0.2s",
-            }} />
+            <div
+              key={idx}
+              className={`simon-dot${done ? " done" : ""}`}
+              style={{ "--dot-c": c.color }}
+            />
           );
         })}
       </div>

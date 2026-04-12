@@ -234,13 +234,12 @@ export default function TetrisGame({ onEnd }) {
   const grid = renderBoard();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.8rem" }}>
+    <div className="tetris-wrapper">
       <div className="tetris-wrap">
         <div
           className="tetris-board"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          style={{ touchAction: "none" }}  /* evita scroll mientras se juega */
         >
           {grid.flat().map((cell, i) => (
             <div
@@ -275,7 +274,7 @@ export default function TetrisGame({ onEnd }) {
             <div className="tetris-info-label">LÍNEAS</div>
             <div className="tetris-info-val">{lines}</div>
             <div className="tetris-info-label">VELOCIDAD</div>
-            <div className="tetris-info-val" style={{ color: score >= SPEED_STEP_PTS ? "#f5c842" : "var(--text-dim)", fontSize: ".9rem" }}>
+            <div className={`tetris-speed-val${score >= SPEED_STEP_PTS ? " leveled" : ""}`}>
               LV {Math.floor(score / SPEED_STEP_PTS) + 1}
             </div>
             <div className="tetris-ctrl">

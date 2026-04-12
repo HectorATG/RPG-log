@@ -18,6 +18,8 @@ export default function Navbar({
   unreadCount = 0,
   notifs = [], setNotifs,
   user,
+  canInstall = false,
+  onInstall,
 }) {
 
   const displayUser = user || { avatar: "🧙", name: "Héroe", title: "", level: 1, coins };
@@ -57,7 +59,6 @@ export default function Navbar({
         <div
           className="nav-logo"
           onClick={() => handleNavClick("home")}
-          style={{ cursor: "pointer" }}
           title="Ir al inicio"
         >
           <span className="nav-logo-icon">🗡️</span>
@@ -82,7 +83,7 @@ export default function Navbar({
           <div className="nav-coins">🪙 {coins.toLocaleString()}</div>
 
           {/* Campana */}
-          <div style={{ position: "relative" }}>
+          <div className="nav-bell-wrap">
             <button
               className={`nav-bell${showNotifPanel ? " active" : ""}`}
               onClick={toggleNotifPanel}
@@ -103,7 +104,7 @@ export default function Navbar({
           </div>
 
           {/* Avatar */}
-          <div style={{ position: "relative" }}>
+          <div className="nav-avatar-wrap">
             <div
               className={`nav-avatar${showDropdown ? " active" : ""}`}
               onClick={toggleAvatarDrop}
@@ -117,6 +118,8 @@ export default function Navbar({
                 setShowDropdown={setShowDropdown}
                 unreadCount={unreadCount}
                 user={{ ...displayUser, coins }}
+                canInstall={canInstall}
+                onInstall={onInstall}
               />
             )}
           </div>

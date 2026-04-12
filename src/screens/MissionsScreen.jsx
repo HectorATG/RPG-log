@@ -89,38 +89,21 @@ const FilterBar = ({ active, onChange }) => (
 // ── MissionCard con botones de gestión ───────────────────────────
 function MissionCardWithActions({ mission, type, onComplete, onDelete, onSwap }) {
   return (
-    <div style={{ position: "relative" }}>
+    <div className="mission-card-wrap">
       <MissionCard mission={mission} type={type} onComplete={onComplete} />
       {!mission.done && (
-        <div style={{
-          position: "absolute", top: ".55rem", right: ".7rem",
-          display: "flex", gap: ".35rem", zIndex: 2,
-        }}>
-          {/* Cambiar misión */}
+        <div className="mission-card-actions">
           <button
+            className="mission-action-btn mission-action-swap"
             title="Cambiar por otra misión aleatoria"
             onClick={() => onSwap(mission)}
-            style={{
-              background: "rgba(91,141,217,.15)",
-              border: "1px solid rgba(91,141,217,.4)",
-              color: "#5b8dd9", width: 28, height: 28,
-              cursor: "pointer", fontSize: "0.8rem",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
           >
             🔁
           </button>
-          {/* Eliminar misión */}
           <button
+            className="mission-action-btn mission-action-delete"
             title="Eliminar esta misión"
             onClick={() => onDelete(mission.id)}
-            style={{
-              background: "rgba(224,82,82,.15)",
-              border: "1px solid rgba(224,82,82,.4)",
-              color: "#e05252", width: 28, height: 28,
-              cursor: "pointer", fontSize: "0.8rem",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
           >
             ❌
           </button>

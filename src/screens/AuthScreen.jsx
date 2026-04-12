@@ -36,7 +36,7 @@ export default function AuthScreen() {
           </div>
           <div className="logo-sub">PERSONAL RPG SYSTEM</div>
           <div className="xp-bar-wrap">
-            <div className="xp-bar-fill" style={{ "--xp-w": "72%" }} />
+            <div className="xp-bar-fill" />
           </div>
         </div>
 

@@ -116,3 +116,10 @@ button { -webkit-tap-highlight-color: transparent; }
   }
   .scanlines { display: none; }
 }
+
+/* ── App loading state ── */
+.app-loading {
+  font-family: var(--pixel);
+  padding: 2rem;
+  text-align: center;
+}

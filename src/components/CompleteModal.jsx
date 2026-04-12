@@ -158,7 +158,7 @@ export default function CompleteModal({ mission, onClose, onDone, gpsEnabled = f
         {/* ── Evidencia de ubicación GPS ─────────────────────── */}
         {/* Auto GPS: GPS activo → muestra badge automático */}
         {autoGps && (
-          <div className="modal-gps-section" style={{ background: "rgba(82,201,122,.08)", borderColor: "rgba(82,201,122,.35)" }}>
+          <div className="modal-gps-section modal-gps-section--auto">
             <div className="modal-gps-status ok">
               📡 BONUS GPS AUTOMÁTICO
               <div className="modal-gps-coords">
@@ -166,7 +166,7 @@ export default function CompleteModal({ mission, onClose, onDone, gpsEnabled = f
                 {lastCoords.accuracy && ` (±${Math.round(lastCoords.accuracy)}m)`}
               </div>
             </div>
-            <div style={{ fontFamily: "var(--vt)", fontSize: "1rem", color: "var(--text-dim)", textAlign: "center" }}>
+            <div className="modal-gps-auto-note">
               Tu ubicación se añadirá como evidencia al completar
             </div>
           </div>
