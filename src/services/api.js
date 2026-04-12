@@ -34,18 +34,32 @@ function getBaseUrl() {
 const BASE = getBaseUrl();
 // ── Token management ─────────────────────────────────────────────
 export const TOKEN_KEY   = "rpglog_token";
-export const getToken    = ()      => localStorage.getItem(TOKEN_KEY);
-export const setToken    = (token) => localStorage.setItem(TOKEN_KEY, token);
-export const clearToken  = ()      => localStorage.removeItem(TOKEN_KEY);
+export const getToken = () => {
+  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+};
+
+export const setToken = (token) => {
+  localStorage.setItem(TOKEN_KEY, token);
+  sessionStorage.setItem(TOKEN_KEY, token); // 🔥 backup móvil
+};
+
+export const clearToken = () => {
+  localStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+};
 
 // ── Base fetch con manejo de CORS y errores ──────────────────────
 async function apiFetch(path, options = {}) {
   const token = getToken();
+
+if (!token) {
+  console.warn("⚠️ No hay token en storage");
+}
   const headers = {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(options.headers || {}),
-  };
+  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  "Content-Type": "application/json",
+  ...(options.headers || {}),
+};
 
   let res;
   try {

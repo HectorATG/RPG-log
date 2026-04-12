@@ -38,29 +38,26 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
-    // Al montar, validar token y obtener usuario
-    let mounted = true;
-    (async () => {
-      try {
-        if (!mounted) return;
-        await refresh();
-      } catch (_) {
-        // ignore
-      }
-    })();
-    return () => { mounted = false; };
-  }, [refresh]);
-
-  const login = useCallback(async ({ email, password }) => {
-    const data = await authApi.login({ email, password });
-    if (data?.user) {
-      setUser(data.user);
-      setProfile(data.profile || null);
-      setStats(data.stats || []);
+useEffect(() => {
+  const initAuth = async () => {
+    try {
+      await refresh();
+    } catch (err) {
+      console.warn("Auth restore failed:", err.message);
     }
-    return data;
-  }, []);
+  };
+
+  initAuth();
+}, [refresh]);
+
+const login = useCallback(async ({ email, password }) => {
+  const data = await authApi.login({ email, password });
+
+  // 🔥 FORZAR REFRESH REAL DESPUÉS DE LOGIN
+  await refresh();
+
+  return data;
+}, [refresh]);
 
   const register = useCallback(async ({ username, email, password }) => {
     const data = await authApi.register({ username, email, password });
