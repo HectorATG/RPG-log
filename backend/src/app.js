@@ -62,8 +62,8 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 };
 
-// Pre-flight para todas las rutas
-app.options("*", cors(corsOptions));
+// Pre-flight para todas las rutas (Express 5 / path-to-regexp v8 requiere "/{*path}")
+app.options("/{*path}", cors(corsOptions));
 app.use(cors(corsOptions));
 
 // ─────────────────────────────────────────────────────────────────
